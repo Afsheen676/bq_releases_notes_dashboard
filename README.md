@@ -134,7 +134,7 @@ text
 http://127.0.0.1:5000
 ⚠️ Note: Keep the PowerShell/terminal window open while running the app. Press CTRL+C to stop the server.
 
-
+**🌐 Live Demo:** [https://bq-releases-notes-dashboard.onrender.com](https://bq-releases-notes-dashboard.onrender.com)
 👤 About the Author
 Afsheen Muavia
 BS Data Science (2nd Semester)
