@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Pulse - Live Tracker</title>
+    <meta name="description" content="Stay updated with the latest Google Cloud BigQuery features, announcements, updates, and issues parsed live from the official release notes.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="glow-container">
+        <div class="glow-circle glow-1"></div>
+        <div class="glow-circle glow-2"></div>
+    </div>
+
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
+                </div>
+                <div>
+                    <h1>BigQuery Release Pulse</h1>
+                    <p class="subtitle">Live updates tracker and compiler for Google Cloud BigQuery</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="refresh-btn" class="btn btn-primary" title="Refresh release notes from live feed">
+                    <i class="fa-solid fa-rotate"></i> <span>Sync Feed</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="container main-grid">
+            <!-- Left Side: Filters and Release Notes List -->
+            <section class="feed-section">
+                <!-- Search & Filters Card -->
+                <div class="controls-card glass">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Search features, issues, keywords...">
+                        <button id="clear-search" class="clear-btn" style="display:none;">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="filters-row">
+                        <span class="filter-label">Filter by type:</span>
+                        <div class="filter-pills">
+                            <button class="pill active" data-category="all">All</button>
+                            <button class="pill" data-category="Feature">
+                                <span class="dot dot-feature"></span>Feature
+                            </button>
+                            <button class="pill" data-category="Announcement">
+                                <span class="dot dot-announcement"></span>Announcement
+                            </button>
+                            <button class="pill" data-category="Breaking">
+                                <span class="dot dot-breaking"></span>Breaking
+                            </button>
+                            <button class="pill" data-category="Issue">
+                                <span class="dot dot-issue"></span>Issue
+                            </button>
+                            <button class="pill" data-category="Change">
+                                <span class="dot dot-change"></span>Change
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feed Stats Summary -->
+                <div class="feed-stats-summary">
+                    <span id="showing-count">Showing 0 updates</span>
+                    <button id="select-all-visible-btn" class="btn btn-text">
+                        <i class="fa-regular fa-square-check"></i> Select all visible
+                    </button>
+                </div>
+
+                <!-- Notes list container -->
+                <div id="notes-container" class="notes-list">
+                    <!-- Skeleton Loader (shows while fetching data) -->
+                    <div class="skeleton-card glass">
+                        <div class="skeleton-header">
+                            <div class="skeleton-badge"></div>
+                            <div class="skeleton-date"></div>
+                        </div>
+                        <div class="skeleton-text"></div>
+                        <div class="skeleton-text short"></div>
+                    </div>
+                    <div class="skeleton-card glass">
+                        <div class="skeleton-header">
+                            <div class="skeleton-badge"></div>
+                            <div class="skeleton-date"></div>
+                        </div>
+                        <div class="skeleton-text"></div>
+                        <div class="skeleton-text short"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Side: Sticky Selection & Share Panel -->
+            <aside class="sidebar-section">
+                <div class="share-panel glass sticky">
+                    <div class="panel-header">
+                        <h2>Share Compiler</h2>
+                        <span class="badge selection-count" id="selection-badge">0 selected</span>
+                    </div>
+
+                    <div class="panel-body">
+                        <!-- Empty State -->
+                        <div id="share-empty-state" class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fa-solid fa-bullhorn animate-pulse"></i>
+                            </div>
+                            <p class="empty-title">Ready to compile updates</p>
+                            <p class="empty-desc">Check the updates on the left to compile and share them instantly.</p>
+                        </div>
+
+                        <!-- Compile View -->
+                        <div id="share-compile-view" class="compile-view" style="display: none;">
+                            <div class="selected-items-list-wrapper">
+                                <label class="section-label">Selected Updates:</label>
+                                <ul id="selected-titles-list" class="selected-titles-list">
+                                    <!-- Populated dynamically -->
+                                </ul>
+                            </div>
+
+                            <div class="compose-section">
+                                <div class="compose-header">
+                                    <label for="share-textarea" class="section-label">Compiled Message Preview:</label>
+                                    <span class="char-counter" id="char-counter">0 / 280</span>
+                                </div>
+                                <div class="textarea-container">
+                                    <textarea id="share-textarea" rows="8" placeholder="Summarize your compiled updates here..."></textarea>
+                                </div>
+                                <div class="action-tips">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <span>You can edit this compiled text before sharing. Links will automatically append.</span>
+                                </div>
+                            </div>
+
+                            <div class="share-actions">
+                                <button id="share-twitter-btn" class="btn btn-share btn-twitter">
+                                    <i class="fa-brands fa-x-twitter"></i> Share to X (Twitter)
+                                </button>
+                                <button id="copy-clipboard-btn" class="btn btn-secondary">
+                                    <i class="fa-regular fa-copy"></i> Copy Text
+                                </button>
+                                <button id="clear-selection-btn" class="btn btn-text btn-danger-text">
+                                    <i class="fa-solid fa-trash-can"></i> Clear selections
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <div class="container footer-container">
+            <p>&copy; 2026 BigQuery Release Pulse. Created with Google Antigravity.</p>
+            <div class="footer-links">
+                <a href="https://cloud.google.com/bigquery/docs/release-notes" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Official Release Notes
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script source -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

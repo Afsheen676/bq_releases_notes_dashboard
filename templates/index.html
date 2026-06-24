@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BigQuery Release Notes</title>
+    <style>
+        body { font-family: Arial; background: #f5f7fa; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        header { background: #1a1a2e; color: white; padding: 20px; border-radius: 12px; }
+        button { padding: 10px 20px; margin: 10px 5px; border: none; border-radius: 6px; cursor: pointer; }
+        #refreshBtn { background: #4CAF50; color: white; }
+        #tweetBtn { background: #1DA1F2; color: white; }
+        .note-card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; }
+        .note-card.selected { border-left: 4px solid #1DA1F2; background: #f0f8ff; }
+        .loading { text-align: center; padding: 50px; color: #888; }
+        .spinner { display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>📊 BigQuery Release Notes</h1>
+        <button id="refreshBtn" onclick="refreshNotes()">🔄 Refresh <span class="spinner" id="spinner">⏳</span></button>
+        <button id="tweetBtn" onclick="tweetSelected()">🐦 Tweet Selected</button>
+        <div id="status"></div>
+    </header>
+    <div id="notesContainer"><p class="loading">Loading...</p></div>
+</div>
+<script>
+let selected = [], notes = [];
+
+async function load() {
+    try {
+        const res = await fetch('/api/notes');
+        notes = await res.json();
+        render(notes);
+    } catch { document.getElementById('notesContainer').innerHTML = '<p>⚠️ Failed to load</p>'; }
+}
+
+function render(data) {
+    const container = document.getElementById('notesContainer');
+    if (!data.length) { container.innerHTML = '<p>No notes</p>'; return; }
+    let html = '';
+    data.forEach((n, i) => {
+        const sel = selected.includes(i);
+        html += `<div class="note-card ${sel?'selected':''}" onclick="toggle(${i})">
+            <h3>${n.title}</h3>
+            <p>${n.summary}</p>
+            <small>${n.published ? new Date(n.published).toLocaleDateString() : ''}</small>
+            <div>${sel ? '✅ Selected' : '⬜ Click to select'}</div>
+        </div>`;
+    });
+    container.innerHTML = html;
+    updateBtn();
+}
+
+function toggle(i) {
+    const idx = selected.indexOf(i);
+    idx > -1 ? selected.splice(idx,1) : selected.push(i);
+    render(notes);
+}
+
+function updateBtn() {
+    const btn = document.getElementById('tweetBtn');
+    btn.textContent = selected.length ? `🐦 Tweet (${selected.length})` : '🐦 Tweet Selected';
+    btn.disabled = !selected.length;
+}
+
+async function refreshNotes() {
+    document.getElementById('spinner').style.display = 'inline-block';
+    const res = await fetch('/api/refresh');
+    notes = await res.json();
+    selected = [];
+    render(notes);
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('status').textContent = '✅ Updated';
+}
+
+function tweetSelected() {
+    if (!selected.length) return;
+    const text = selected.map(i => notes[i].title).join('\n');
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+load();
+</script>
+</body>
+</html>
