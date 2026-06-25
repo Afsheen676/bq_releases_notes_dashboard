@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>BigQuery Release Notes</title>
+
+    <style>
+        /* ===== CSS Variables (Light Mode Default) ===== */
+        :root {
+            --bg-body: #f5f7fa;
+            --bg-card: #ffffff;
+            --bg-header: #1a1a2e;
+            --text-primary: #1a1a2e;
+            --text-header: #ffffff;
+            --text-secondary: #555;
+            --border-color: #ddd;
+            --shadow: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-hover: 0 4px 16px rgba(0,0,0,0.1);
+            --selected-bg: #f0f8ff;
+            --selected-border: #1DA1F2;
+            --btn-refresh: #4CAF50;
+            --btn-tweet: #1DA1F2;
+            --btn-copy: #FF9800;
+            --btn-export: #9C27B0;
+        }
+
+        /* ===== Dark Mode Override ===== */
+        body.dark-mode {
+            --bg-body: #121212;
+            --bg-card: #1e1e1e;
+            --bg-header: #0d0d0d;
+            --text-primary: #e0e0e0;
+            --text-header: #ffffff;
+            --text-secondary: #aaaaaa;
+            --border-color: #333;
+            --shadow: 0 2px 8px rgba(0,0,0,0.4);
+            --shadow-hover: 0 4px 16px rgba(0,0,0,0.6);
+            --selected-bg: #1a2a3a;
+            --selected-border: #4FC3F7;
+        }
+
+        /* ===== Global Styles ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            padding: 20px;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* ===== Header ===== */
+        header {
+            background: var(--bg-header);
+            color: var(--text-header);
+            padding: 20px 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            transition: background 0.3s;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin-right: 20px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .controls button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #fff;
+        }
+
+        #refreshBtn   { background: var(--btn-refresh); }
+        #tweetBtn     { background: var(--btn-tweet); }
+        #copyBtn      { background: var(--btn-copy); }
+        #exportBtn    { background: var(--btn-export); }
+
+        .controls button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+        .controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ===== Dark Mode Toggle (Switch) ===== */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            border-radius: 24px;
+            transition: 0.3s;
+        }
+        .slider::before {
+            content: "";
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        .switch input:checked + .slider {
+            background-color: #4FC3F7;
+        }
+        .switch input:checked + .slider::before {
+            transform: translateX(20px);
+        }
+
+        #status {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-top: 6px;
+            width: 100%;
+        }
+
+        /* ===== Note Cards ===== */
+        #notesContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .note-card {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            padding: 18px 22px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+        .note-card:hover {
+            transform: translateX(6px);
+            box-shadow: var(--shadow-hover);
+        }
+        .note-card.selected {
+            border-left-color: var(--selected-border);
+            background: var(--selected-bg);
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+        .note-header .date {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .note-card h3 {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+        .note-card p {
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .note-card a {
+            color: var(--selected-border);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .note-card a:hover {
+            text-decoration: underline;
+        }
+
+        .note-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .note-actions button {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--btn-copy);
+            color: #fff;
+            transition: 0.2s;
+        }
+        .note-actions button:hover {
+            filter: brightness(1.1);
+        }
+
+        .note-check {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 22px;
+        }
+
+        .loading, .empty, .error-msg {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border-radius: 12px;
+        }
+        .error-msg { color: #e74c3c; }
+
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 700px) {
+            header { flex-direction: column; align-items: stretch; }
+            header h1 { margin-bottom: 10px; }
+            .controls { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>📊 BigQuery Release Notes</h1>
+        <div class="controls">
+            <button id="refreshBtn" onclick="refreshNotes()">
+                🔄 Refresh <span class="spinner" id="spinner">⏳</span>
+            </button>
+            <button id="tweetBtn" onclick="tweetSelected()" disabled>🐦 Tweet</button>
+            <button id="copyBtn" onclick="copySelected()" disabled>📋 Copy</button>
+            <button id="exportBtn" onclick="exportCSV()">📥 Export CSV</button>
+
+            <div class="toggle-container">
+                <span>🌙</span>
+                <label class="switch">
+                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                    <span class="slider"></span>
+                </label>
+                <span>☀️</span>
+            </div>
+        </div>
+        <div id="status"></div>
+    </header>
+
+    <div id="notesContainer"><p class="loading">Loading...</p></div>
+</div>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+let selected = [];
+let notes = [];
+
+// ============================================================
+//  DARK MODE
+// ============================================================
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+}
+// Load saved preference
+if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkModeToggle').checked = true;
+}
+
+// ============================================================
+//  FETCH & RENDER
+// ============================================================
+async function load() {
+    try {
+        const res = await fetch('/api/notes');
+        if (!res.ok) throw new Error('Network error');
+        notes = await res.json();
+        render(notes);
+    } catch (e) {
+        document.getElementById('notesContainer').innerHTML =
+            `<p class="error-msg">⚠️ Failed to load notes. Check console.</p>`;
+        console.error(e);
+    }
+}
+
+function render(data) {
+    const container = document.getElementById('notesContainer');
+    if (!data || data.length === 0) {
+        container.innerHTML = '<p class="empty">No notes available.</p>';
+        updateButtons();
+        return;
+    }
+    let html = '';
+    data.forEach((n, i) => {
+        const sel = selected.includes(i);
+        const date = n.published ? new Date(n.published).toLocaleDateString() : 'Unknown';
+        html += `
+            <div class="note-card ${sel ? 'selected' : ''}" onclick="toggle(${i})">
+                <div class="note-header">
+                    <span class="date">${date}</span>
+                </div>
+                <h3>${n.title || 'No Title'}</h3>
+                <p>${n.summary || 'No summary available.'}</p>
+                <a href="${n.link || '#'}" target="_blank" onclick="event.stopPropagation();">🔗 View full update</a>
+                <div class="note-actions">
+                    <button onclick="event.stopPropagation(); copyNote(${i})">📋 Copy</button>
+                </div>
+                <div class="note-check">${sel ? '✅ Selected' : '⬜'}</div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+    updateButtons();
+}
+
+// ============================================================
+//  SELECTION
+// ============================================================
+function toggle(i) {
+    const idx = selected.indexOf(i);
+    idx > -1 ? selected.splice(idx, 1) : selected.push(i);
+    render(notes);
+}
+
+function updateButtons() {
+    const has = selected.length > 0;
+    document.getElementById('tweetBtn').disabled = !has;
+    document.getElementById('copyBtn').disabled = !has;
+    document.getElementById('tweetBtn').textContent = has ? `🐦 Tweet (${selected.length})` : '🐦 Tweet';
+    document.getElementById('copyBtn').textContent = has ? `📋 Copy (${selected.length})` : '📋 Copy';
+}
+
+// ============================================================
+//  REFRESH
+// ============================================================
+async function refreshNotes() {
+    const spinner = document.getElementById('spinner');
+    const btn = document.getElementById('refreshBtn');
+    btn.disabled = true;
+    spinner.style.display = 'inline-block';
+
+    try {
+        const res = await fetch('/api/refresh');
+        notes = await res.json();
+        selected = [];
+        render(notes);
+        document.getElementById('status').textContent = '✅ Updated at ' + new Date().toLocaleTimeString();
+    } catch (e) {
+        document.getElementById('status').textContent = '❌ Refresh failed.';
+        console.error(e);
+    } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+    }
+}
+
+// ============================================================
+//  TWEET
+// ============================================================
+function tweetSelected() {
+    if (!selected.length) return;
+    const text = selected.map(i => notes[i].title).join('\n');
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+// ============================================================
+//  COPY TO CLIPBOARD
+// ============================================================
+function copyNote(i) {
+    const note = notes[i];
+    const text = `${note.title}\n${note.summary}\n${note.published || ''}\n${note.link || ''}`;
+    navigator.clipboard.writeText(text).then(() => {
+        alert('✅ Copied to clipboard!');
+    }).catch(() => {
+        // Fallback for older browsers
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert('✅ Copied to clipboard!');
+    });
+}
+
+function copySelected() {
+    if (!selected.length) return;
+    const text = selected.map(i => {
+        const n = notes[i];
+        return `${n.title}\n${n.summary}\n${n.published || ''}\n${n.link || ''}`;
+    }).join('\n\n---\n\n');
+    navigator.clipboard.writeText(text).then(() => {
+        alert(`✅ Copied ${selected.length} note(s) to clipboard!`);
+    }).catch(() => {
+        alert('⚠️ Could not copy. Please copy manually.');
+    });
+}
+
+// ============================================================
+//  EXPORT CSV
+// ============================================================
+function exportCSV() {
+    if (!notes || notes.length === 0) {
+        alert('No notes to export.');
+        return;
+    }
+    // Headers
+    let csv = 'Title,Summary,Published,Link\n';
+    notes.forEach(n => {
+        const title = (n.title || '').replace(/,/g, ' ');
+        const summary = (n.summary || '').replace(/,/g, ' ');
+        const published = n.published || '';
+        const link = n.link || '';
+        csv += `"${title}","${summary}","${published}","${link}"\n`;
+    });
+
+    // Create download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bigquery_notes_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  START
+// ============================================================
+load();
+</script>
+</body>
+</html>
